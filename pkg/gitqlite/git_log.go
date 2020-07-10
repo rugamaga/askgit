@@ -22,7 +22,7 @@ type gitLogTable struct {
 func (m *gitLogModule) Create(c *sqlite3.SQLiteConn, args []string) (sqlite3.VTab, error) {
 	err := c.DeclareVTab(fmt.Sprintf(`
 		CREATE TABLE %q (
-			id TEXT,
+			id TEXT PRIMARY KEY,
 			message TEXT,
 			summary TEXT,
 			author_name TEXT,
@@ -36,7 +36,7 @@ func (m *gitLogModule) Create(c *sqlite3.SQLiteConn, args []string) (sqlite3.VTa
 			tree_id TEXT,
 			additions INT(10),
 			deletions INT(10)
-		)`, args[0]))
+		) WITHOUT ROWID`, args[0]))
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (v *gitLogTable) Open() (sqlite3.VTabCursor, error) {
 	headRef, err := v.repo.Head()
 	if err != nil {
 		if err == plumbing.ErrReferenceNotFound {
-			return &commitCursor{0, v.repo, nil, nil, true}, nil
+			return &commitCursor{v.repo, nil, nil, true}, nil
 		}
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (v *gitLogTable) Open() (sqlite3.VTabCursor, error) {
 		return nil, err
 	}
 
-	return &commitCursor{0, v.repo, commit, iter, false}, nil
+	return &commitCursor{v.repo, commit, iter, false}, nil
 }
 
 func (v *gitLogTable) BestIndex(cst []sqlite3.InfoConstraint, ob []sqlite3.InfoOrderBy) (*sqlite3.IndexResult, error) {
@@ -97,7 +97,6 @@ func (v *gitLogTable) Disconnect() error {
 func (v *gitLogTable) Destroy() error { return nil }
 
 type commitCursor struct {
-	index      int
 	repo       *git.Repository
 	current    *object.Commit
 	commitIter object.CommitIter
@@ -186,13 +185,10 @@ func (vc *commitCursor) Column(c *sqlite3.SQLiteContext, col int) error {
 }
 
 func (vc *commitCursor) Filter(idxNum int, idxStr string, vals []interface{}) error {
-	vc.index = 0
 	return nil
 }
 
 func (vc *commitCursor) Next() error {
-	vc.index++
-
 	commit, err := vc.commitIter.Next()
 	if err != nil {
 		if err == io.EOF {
@@ -212,7 +208,7 @@ func (vc *commitCursor) EOF() bool {
 }
 
 func (vc *commitCursor) Rowid() (int64, error) {
-	return int64(vc.index), nil
+	return int64(0), nil
 }
 
 func (vc *commitCursor) Close() error {

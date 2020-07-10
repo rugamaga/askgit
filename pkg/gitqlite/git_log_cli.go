@@ -20,7 +20,7 @@ type gitLogCLITable struct {
 func (m *gitLogCLIModule) Create(c *sqlite3.SQLiteConn, args []string) (sqlite3.VTab, error) {
 	err := c.DeclareVTab(fmt.Sprintf(`
 		CREATE TABLE %q (
-			id TEXT,
+			id TEXT PRIMARY KEY,
 			message TEXT,
 			summary TEXT,
 			author_name TEXT,
@@ -34,7 +34,7 @@ func (m *gitLogCLIModule) Create(c *sqlite3.SQLiteConn, args []string) (sqlite3.
 			tree_id TEXT,
 			additions INT(10),
 			deletions INT(10)
-		)`, args[0]))
+		) WITHOUT ROWID`, args[0]))
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,6 @@ type commitCLICursor struct {
 }
 
 func (vc *commitCLICursor) Column(c *sqlite3.SQLiteContext, col int) error {
-
 	switch col {
 	case 0:
 		//commit id
