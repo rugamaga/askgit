@@ -8,4 +8,8 @@ lint:
 	golangci-lint run --build-tags sqlite_vtable
 
 test:
-	go test -v -tags=sqlite_vtable ./...
+	go test -v -tags=sqlite_vtable ./... -cover
+
+test-cover-profile:
+	go test -v -tags=sqlite_vtable ./... -cover -coverprofile=coverage.out
+	go tool cover -html=coverage.out
